@@ -96,3 +96,6 @@ config-jwt-remove:
 
 remove-all:
 	@for i in plugins consumers routes services upstreams; do for j in $$(curl -s --url http://127.0.0.1:8001/$${i} | jq -r ".data[].id"); do curl -s -i -X DELETE --url http://127.0.0.1:8001/$${i}/$${j}; done; done
+
+config_test:
+	@curl -i -X POST http://localhost:8001/services/private/plugins -d "name=${NAME}" -d "config.valid_domains=gmail.com" -d "config.sub_whitelist[]=leandro.souza.carneiro@gmail.com" -d "config.sub_whitelist[]=leandro.lean@gmail.com"

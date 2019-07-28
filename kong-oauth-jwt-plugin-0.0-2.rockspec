@@ -1,5 +1,5 @@
 package = "kong-oauth-jwt-plugin"
-version = "0.0-1"
+version = "0.0-2"
 
 source = {
  url    = "git@bitbucket.org:leandro-carneiro/kong-oauth-jwt-plugin.git",
@@ -17,8 +17,8 @@ dependencies = {
 build = {
   type = "builtin",
   modules = {
-    ["kong.plugins.kong-oauth-jwt-plugin.handler"] = "src/handler.lua",
     ["kong.plugins.kong-oauth-jwt-plugin.schema"] = "src/schema.lua",
     ["kong.plugins.kong-oauth-jwt-plugin.access"] = "src/access.lua",
+    ["kong.plugins.kong-oauth-jwt-plugin.handler"] = "src/handler.lua",
   }
 }

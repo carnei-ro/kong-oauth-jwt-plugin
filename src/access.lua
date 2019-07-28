@@ -129,6 +129,7 @@ end
 
 local function return_redirect(issuer_uri, uri, err)
   ngx_log(ngx_ERR, tostring(err))
+  ngx_header["WWW-Authenticate"]='error="' .. tostring(err) .. '"'
   return ngx.redirect(issuer_uri.."?uri="..uri)
 end
 
@@ -178,8 +179,20 @@ local function retrieve_jwt(conf, token)
       return nil, "Invalid iss"
     end
 
-    if not has_value(conf.valid_domain, jwt.claims.domain) then
+    if not has_value(conf.valid_domains, jwt.claims.domain) then
       return nil, "Invalid domain"
+    end
+
+    if conf["sub_whitelist"] and table.getn(conf["sub_whitelist"]) ~= 0 then
+      if not has_value(conf.sub_whitelist, jwt.claims.sub) then
+        return nil, "Sub is not in the whitelist"
+      end
+    end
+
+    if conf["sub_blacklist"] and table.getn(conf["sub_blacklist"]) ~= 0 then
+      if has_value(conf.sub_blacklist, jwt.claims.sub) then
+        return nil, "Sub is in the blacklist"
+      end
     end
 
     local system_clock = ngx_now()
@@ -217,9 +230,6 @@ local function do_authentication(conf)
 
     if err then
       ngx_log(ngx_ERR, ">>> ERROR retrieve_jwt: [", err, "]")
-      if err == "token expired" then
-        ngx_header["WWW-Authenticate"]='error="invalid_token"'
-      end
       return_redirect(conf["issuer_uri"], conf["uri"], err)
     end
 
