@@ -3,7 +3,7 @@ return {
         -- Describe your plugin's configuration's schema here.
         uri_param_names = { type = "array", default = { "oauth_jwt"  }, required = true },
         cookie_names = { type = "array", default = { "oauth_jwt" }, required = true },
-        valid_iss = { type = "array", default = { "kong-google-oauth-jwt-signer" }, required = true },
+        valid_iss = { type = "array", default = { "Kong" }, required = true },
         valid_domains = {type = "array", default={ "google.com" }, required=true},
         use_cache = { type = "boolean", default = true },
         override_ttl = { type = "boolean", default = false },
