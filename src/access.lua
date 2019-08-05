@@ -179,8 +179,10 @@ local function retrieve_jwt(conf, token)
       return nil, "Invalid iss"
     end
 
-    if not has_value(conf.valid_domains, jwt.claims.domain) then
-      return nil, "Invalid domain"
+    if conf["valid_domains"] and table.getn(conf["valid_domains"]) ~= 0 then
+      if not has_value(conf.valid_domains, jwt.claims.domain) then
+        return nil, "Invalid domain"
+      end
     end
 
     if conf["sub_whitelist"] and table.getn(conf["sub_whitelist"]) ~= 0 then
