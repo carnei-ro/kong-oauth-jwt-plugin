@@ -175,8 +175,10 @@ local function retrieve_jwt(conf, token)
       return nil, "Invalid signature"
     end
 
-    if not has_value(conf.valid_iss, jwt.claims.iss) then
-      return nil, "Invalid iss"
+    if conf["valid_iss"] and table.getn(conf["valid_iss"]) ~= 0 then
+      if not has_value(conf.valid_iss, jwt.claims.iss) then
+        return nil, "Invalid iss"
+      end
     end
 
     if conf["valid_domains"] and table.getn(conf["valid_domains"]) ~= 0 then
