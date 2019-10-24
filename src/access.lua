@@ -240,6 +240,17 @@ local function do_authentication(conf)
     set_header("X-CLAIM-SUB", claims.sub)
     set_header("X-CLAIM-DOMAIN", claims.domain)
     set_header("X-CLAIM-USER", claims.user)
+
+    if conf.t_claims then
+      for _,claim in ipairs(conf.t_claims) do
+        if claims[claim] then
+          set_header(conf['t_claims_to_headers'][claim], claims[claim])
+        else
+          set_header(conf['t_claims_to_headers'][claim], nil)
+        end
+      end
+    end
+
     return true
 end
 
@@ -248,6 +259,16 @@ function _M.execute(conf)
 
     if not conf.run_on_preflight and get_method() == "OPTIONS" then
         return
+    end
+
+    if conf.claims_to_headers then
+      conf['t_claims_to_headers'] = {}
+      conf['t_claims'] = {}
+      for _,map in pairs(conf.claims_to_headers) do
+        local claim, header = map:match("^([^:]+):*(.-)$")
+        conf['t_claims_to_headers'][claim] = header
+        table_insert(conf['t_claims'], claim)
+      end
     end
 
     local ok, err = do_authentication(conf)
