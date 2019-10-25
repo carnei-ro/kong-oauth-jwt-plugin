@@ -182,15 +182,17 @@ local function retrieve_jwt(conf, token)
       end
     end
 
+    -- Validate domains
     if conf["valid_domains"] and table.getn(conf["valid_domains"]) ~= 0 then
       if not has_value(conf.valid_domains, jwt.claims.domain) then
-        return nil, "Invalid domain"
-      end
-    end
-
-    if conf["sub_whitelist"] and table.getn(conf["sub_whitelist"]) ~= 0 then
-      if not has_value(conf.sub_whitelist, jwt.claims.sub) then
-        return nil, "Sub is not in the whitelist"
+        -- Allow if domain is not valid, but sub is listed on whitelist
+        if conf["sub_whitelist"] and table.getn(conf["sub_whitelist"]) ~= 0 then
+          if not has_value(conf.sub_whitelist, jwt.claims.sub) then
+            return nil, "Invalid domain"
+          end
+        else
+          return nil, "Invalid domain"
+        end
       end
     end
 
