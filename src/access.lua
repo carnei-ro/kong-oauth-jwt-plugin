@@ -13,6 +13,7 @@ local ipairs        = ipairs
 local pairs         = pairs
 local tostring      = tostring
 local string_format = string.format
+local table_insert  = table.insert
 local ngx_re_gmatch = ngx.re.gmatch
 local get_method    = ngx.req.get_method
 local set_header    = ngx.req.set_header
