@@ -1,7 +1,8 @@
 local typedefs = require "kong.db.schema.typedefs"
+local plugin_name = ({...})[1]:match("^kong%.plugins%.([^%.]+)")
 
 return {
-  name = "kong-oauth-jwt-plugin",
+  name = plugin_name,
   fields = {
     {
       config = {
@@ -56,6 +57,7 @@ return {
             } },
             { valid_iss = {
                 type = "array",
+                default = { "Kong" },
                 elements = { type = "string" },
                 required = false
             } },

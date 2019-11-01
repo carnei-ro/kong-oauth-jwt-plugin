@@ -49,6 +49,7 @@ services:
       - KONG_PORTAL=off
       - KONG_LOG_LEVEL=debug
       - KONG_PLUGINS=bundled,${NAME}
+      - KONG_NGINX_HTTP_LUA_SHARED_DICT=oauth_jwt_shared_dict 32m
     volumes:
       - plugin-development:/plugin-development
     command:
@@ -59,11 +60,8 @@ services:
         mkdir -p /usr/local/lib/luarocks/rocks/${NAME}/${VERSION}/
         ln -s /plugin-development/${NAME}-${VERSION}.rockspec /usr/local/lib/luarocks/rocks/${NAME}/${VERSION}/${NAME}-${VERSION}.rockspec
         ln -s /plugin-development/src /usr/local/share/lua/5.1/kong/plugins/${NAME}
-        sed -i "/proxy_set_header.*X-Forwarded-For/d; /proxy_set_header.*X-Real-IP/d;" /usr/local/share/lua/5.1/kong/templates/nginx_kong.lua
-        grep jwt_shared_dict /usr/local/share/lua/5.1/kong/templates/nginx_kong.lua || sed -i '/lua_shared_dict kong_db_cache_miss/alua_shared_dict jwt_shared_dict        128m;' /usr/local/share/lua/5.1/kong/templates/nginx_kong.lua 
-        ln -s /plugin-development/public_keys.json /etc/kong/public_keys.json
-        ln -s /plugin-development/private.pem /etc/kong/private.pem
-        ln -s /plugin-development/public.pem /etc/kong/public.pem
+        #sed -i "/proxy_set_header.*X-Forwarded-For/d; /proxy_set_header.*X-Real-IP/d;" /usr/local/share/lua/5.1/kong/templates/nginx_kong.lua
+        ln -s /plugin-development/oauth_jwt_public_keys.json /etc/kong/oauth_jwt_public_keys.json
         kong migrations bootstrap
         kong migrations list 
         kong migrations up

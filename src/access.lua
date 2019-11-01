@@ -1,4 +1,4 @@
-local public_keys_file = '/etc/kong/public_keys.json' -- hard coded to be loaded at init_work phase
+local public_keys_file = '/etc/kong/oauth_jwt_public_keys.json' -- hard coded to be loaded at init_work phase
 
 local plugin_name = ({...})[1]:match("^kong%.plugins%.([^%.]+)")
 
@@ -28,7 +28,7 @@ local ngx_DEBUG     = ngx.DEBUG
 local ngx_ERR       = ngx.ERR
 
 
-local cache, err = mlcache.new(plugin_name, "jwt_shared_dict", {
+local cache, err = mlcache.new(plugin_name, "oauth_jwt_shared_dict", {
     lru_size = 20000,  -- size of the L1 (Lua VM) cache
     ttl      = 120,    -- 120s ttl for hits
     neg_ttl  = 1,      -- 1s ttl for misses
@@ -55,10 +55,6 @@ local function load_public_keys(public_keys_file)
     public_keys[k]=ngx_b64.decode_base64url(v)
   end
 
-  if not public_keys['default'] then
-    ngx_log(ngx_ERR, "The 'default' value is not set in " .. public_keys_file)
-    return public_keys, "The 'default' value is not set in " .. public_keys_file
-  end
   return public_keys
 end
 
@@ -70,12 +66,11 @@ end
 local _M = {}
 
 local function has_value(tab, val)
-    for index, value in ipairs(tab) do
+    for _, value in ipairs(tab) do
         if value == val then
             return true
         end
     end
-
     return false
 end
 
