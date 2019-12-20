@@ -80,16 +80,6 @@ return {
                 type = "array",
                 elements = { type = "string", match = "^[^:]+:.*$" },
                 required = false
-            } },
-            { set_header_with_token = {
-                type = "boolean",
-                default = false,
-                required = true
-            } },
-            { token_header = {
-                type = "string",
-                default = "oauth_jwt",
-                required = true
             } }
         },
       },
