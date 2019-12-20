@@ -249,6 +249,10 @@ local function do_authentication(conf)
       end
     end
 
+    if conf.set_header_with_token then
+      set_header(conf.token_header, token)
+    end
+
     return true
 end
 
