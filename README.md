@@ -30,7 +30,9 @@ plugins:
     valid_domains: [] # To validate domains
     sub_whitelist: [] # To allow specific "sub"
     sub_blacklist: [] # To deny specific "sub"
-    claims_to_headers: [] # Format claim:header. Generates a header with the value of the claim.
+    claims_to_headers: [] # Format claim:header. Generates a header with the value of the claim
+    set_header_with_token: false # Set a header with the value of the token
+    token_header: oauth_jwt # Header name to be set if set_header_with_token is true
 ```
 
 ## Real example
