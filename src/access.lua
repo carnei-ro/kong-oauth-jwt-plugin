@@ -26,6 +26,7 @@ local ngx_exit      = ngx.exit
 local ngx_log       = ngx.log
 local ngx_DEBUG     = ngx.DEBUG
 local ngx_ERR       = ngx.ERR
+local os_getenv     = os.getenv
 
 
 local cache, err = mlcache.new(plugin_name, "oauth_jwt_shared_dict", {
@@ -37,17 +38,17 @@ if err then
     return error("failed to create the cache: " .. (err or "unknown"))
 end
 
-local function load_public_keys(public_keys_file)
-  local content, err = read_file(public_keys_file)
+local function load_public_keys()
+  local content = os_getenv("KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS")
   if content == nil or err then
-      ngx_log(ngx_ERR, "Could not read file contents. ", err)
+      ngx_log(ngx_ERR, "Could not read contents from KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS env var.")
       return nil, tostring(err)
   end
 
   local pkeys = cjson.decode(content)
   if not pkeys then
-    ngx_log(ngx_ERR, "Could not get 'keys' object from " .. public_keys_file )
-    return nil, "Could not get 'keys' object from " .. public_keys_file
+    ngx_log(ngx_ERR, "Could not get 'keys' object from KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS env var." )
+    return nil, "Could not get 'keys' object from KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS env var."
   end
 
   local public_keys={}
@@ -55,13 +56,18 @@ local function load_public_keys(public_keys_file)
     public_keys[k]=ngx_b64.decode_base64url(v)
   end
 
+  if not public_keys['default'] then
+    ngx_log(ngx_ERR, "The 'default' value is not set in KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS env var.")
+    return public_keys, "The 'default' value is not set in KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS env var."
+  end
   return public_keys
 end
 
-local public_keys, err_pk = load_public_keys(public_keys_file)
+local public_keys, err_pk = load_public_keys()
 if err_pk then
   ngx_log(ngx_ERR,   ">>>>>>>>>>> BE CAREFUL: PUBLIC KEYS NOT LOADED CORRECTLY. THIS MAY CAUSE SOME UNEXPECTED 401 RETURNS. <<<<<<<<<<<")
 end
+
 
 local _M = {}
 

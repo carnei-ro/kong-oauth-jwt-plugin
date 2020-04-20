@@ -7,6 +7,10 @@ Plugin priority: 1000.
 
 summary: validate JWT. Creates headers X-CLAIM-SUB, X-CLAIM-DOMAIN and X-CLAIM-USER if claims exists.
 
+
+**FROM VERSION 0.0-7 THIS PLUGINS DEPENDS ON THE CAPABILITY OF [INJECT DIRECTIVES INTO MAIN](https://docs.konghq.com/2.0.x/configuration/#injecting-nginx-directives) - IT HAS STARTED IN KONG 2.0**
+
+
 ## Default values
 
 ```yaml
@@ -68,13 +72,18 @@ Edit `kong.conf` to create a **lua_shared_dict** named `oauth_jwt_shared_dict` f
 nginx_http_lua_shared_dict=oauth_jwt_shared_dict 32m
 ```
 
+Edit `kong.conf` to permit expose environment variable `KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS` to kong:
+```conf
+nginx_main_env=KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS
+```
+
 Generate a key pair to use in the JWT. (The `private` goes to the `kong-...-oauth-jwt-signer` plugin.)  
 ```bash
 openssl genrsa -out private.pem 2048 # generates the private
 openssl rsa -in private.pem -outform PEM -pubout -out public.pem  # generates the public
 ```
 
-Create the file `/etc/kong/oauth_jwt_public_keys.json`.
+Create the environment variable `KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS` that is a JSON.
 Format:  
 - key = `kid` of the JWT 
 - value = public key for the JWT in base64.  
@@ -85,7 +94,7 @@ cat public.pem | base64 | paste -s -d ""
 ```
 
 Example:
-`oauth_jwt_public_keys.json`
+`KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS`
 ```json
 {
   "12345678-1234-1234-1234-123456789ABC":"LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUEzOUk3QndkZTdzV3hsRmdGdElhVQpiTDVBUjY2WWJ0MmJmazFqREFDYjd4b25mam54Sm5nZXdBSnZtTWxmYzBtV0owVll1TVJnalExUExsUUNqL0o3ClNZR1UydnNtS0I3VjIyVjU4Yjd6Z1BCVGtNNDFWYytOZks2M3dGVUdYbUQrdzdBSTFiOXRXZzhORXk3UkRyaW0KZldmUnhLNGlUSGZrSnpMYXJ6c3MzRHVzUzRNbTRJVXIzc2ZXNDFVZVhGRE1ubnc1RWRLbHdvd1lFT3RaaXJJbQpZU1QrZDE5QWFlaDVOMU94YldoVWxqci9NYnFXNXlWV2RPaEZqZENKeDJQZWgxdU9JUUlScjV0U0Rva2kzZ0FLClRWRnpyV3ZoZE51SGw1NTdKV2FTVnJxano5TGt0VEUyN3lKUlhtbGZmK1BSb0VhcmdGY0s1RnhzdDFlSnRkYTIKT1FJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="

@@ -31,7 +31,7 @@ services:
 
 
   kong:
-    image: kong:1.1.2-centos
+    image: kong:2.0.3-centos
     depends_on:
       - kong-database
     environment:
@@ -50,6 +50,8 @@ services:
       - KONG_LOG_LEVEL=debug
       - KONG_PLUGINS=bundled,${NAME}
       - KONG_NGINX_HTTP_LUA_SHARED_DICT=oauth_jwt_shared_dict 32m
+      - KONG_NGINX_MAIN_ENV=KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS
+      - KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS='{"12345678-1234-1234-1234-123456789ABC":"LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUEzOUk3QndkZTdzV3hsRmdGdElhVQpiTDVBUjY2WWJ0MmJmazFqREFDYjd4b25mam54Sm5nZXdBSnZtTWxmYzBtV0owVll1TVJnalExUExsUUNqL0o3ClNZR1UydnNtS0I3VjIyVjU4Yjd6Z1BCVGtNNDFWYytOZks2M3dGVUdYbUQrdzdBSTFiOXRXZzhORXk3UkRyaW0KZldmUnhLNGlUSGZrSnpMYXJ6c3MzRHVzUzRNbTRJVXIzc2ZXNDFVZVhGRE1ubnc1RWRLbHdvd1lFT3RaaXJJbQpZU1QrZDE5QWFlaDVOMU94YldoVWxqci9NYnFXNXlWV2RPaEZqZENKeDJQZWgxdU9JUUlScjV0U0Rva2kzZ0FLClRWRnpyV3ZoZE51SGw1NTdKV2FTVnJxano5TGt0VEUyN3lKUlhtbGZmK1BSb0VhcmdGY0s1RnhzdDFlSnRkYTIKT1FJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="}'
     volumes:
       - plugin-development:/plugin-development
     command:
@@ -84,4 +86,3 @@ volumes:
        type: none
        o: bind
        device: ${PWD}/
-    
