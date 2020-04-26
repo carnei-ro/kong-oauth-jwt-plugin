@@ -56,10 +56,6 @@ local function load_public_keys()
     public_keys[k]=ngx_b64.decode_base64url(v)
   end
 
-  if not public_keys['default'] then
-    ngx_log(ngx_ERR, "The 'default' value is not set in KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS env var.")
-    return public_keys, "The 'default' value is not set in KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS env var."
-  end
   return public_keys
 end
 
