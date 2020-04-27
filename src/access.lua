@@ -164,12 +164,6 @@ local function retrieve_jwt(conf, token)
       return nil, "Invalid signature"
     end
 
-    if conf["valid_iss"] and table.getn(conf["valid_iss"]) ~= 0 then
-      if not has_value(conf.valid_iss, jwt.claims.iss) then
-        return nil, "Invalid iss"
-      end
-    end
-
     local system_clock = ngx_now()
     if conf.validate_token_exp_date and jwt.claims.exp and system_clock > jwt.claims.exp then
       return nil, "token expired"
@@ -235,6 +229,13 @@ local function authorize(conf, claims, key)
 
     ngx_log(ngx_DEBUG, "Authorization for " .. key .. " not found in cache.")
 
+    -- Validate Issuer
+    if conf["valid_iss"] and table.getn(conf["valid_iss"]) ~= 0 then
+      if not has_value(conf.valid_iss, claims.iss) then
+        return nil, '{ "message": "Invalid iss" }'
+      end
+    end
+
     -- Validate domains
     if conf["valid_domains"] and table.getn(conf["valid_domains"]) ~= 0 then
       ngx_log(ngx_DEBUG, "Validating domains ...")
@@ -243,10 +244,10 @@ local function authorize(conf, claims, key)
         if conf["sub_allowlist"] and table.getn(conf["sub_allowlist"]) ~= 0 then
           ngx_log(ngx_DEBUG, "Validating allow list ...")
           if not has_value(conf.sub_allowlist, claims.sub) then
-            return nil, { ["message"] = "Invalid domain" }
+            return nil, '{ "message": "Invalid domain" }'
           end
         else
-          return nil, { ["message"] = "Invalid domain" }
+          return nil, '{ "message": "Invalid domain" }'
         end
       end
     end
@@ -254,14 +255,14 @@ local function authorize(conf, claims, key)
     if conf["sub_denylist"] and table.getn(conf["sub_denylist"]) ~= 0 then
       ngx_log(ngx_DEBUG, "Validating deny list ...")
       if has_value(conf.sub_denylist, claims.sub) then
-        return nil, { ["message"] = "Sub is in the blacklist" }
+        return nil, '{ "message": "Sub is in the blacklist" }'
       end
     end
 
     if conf["claims_to_validate"] then
       ngx_log(ngx_DEBUG, "Validating claims ...")
       allow = false
-      err={ ["message"] = "Claim does not satisfy rules" }
+      err='{ "message": "Claim does not satisfy rules" }'
       for claim, configs in pairs(conf["claims_to_validate"]) do
         if claims[claim] then
           for _,accepted_value in ipairs(configs.accepted_values) do
