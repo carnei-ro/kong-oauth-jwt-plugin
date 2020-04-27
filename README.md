@@ -31,12 +31,21 @@ plugins:
     issuer_uri: /_oauth # URI for the JWT issuer (kong-...-oauth-jwt-signer)
     valid_iss:
     - Kong
-    valid_domains: [] # To validate domains
-    sub_whitelist: [] # To allow specific "sub"
-    sub_blacklist: [] # To deny specific "sub"
     claims_to_headers: [] # Format claim:header. Generates a header with the value of the claim
     set_header_with_token: false # Set a header with the value of the token
     token_header: oauth_jwt # Header name to be set if set_header_with_token is true
+    use_cache_authz: true
+    authz_ttl: 1800 # 30 minutes
+    valid_domains: [] # To validate domains (authz)
+    sub_allowlist: [] # To allow specific "sub" (authz)
+    sub_denylist: [] # To deny specific "sub" (authz)
+    claims_to_validate: <empty> # Claims to validate (authz)
+    # claims_to_validate: # Example to show the fields structure
+    #   roles:
+    #     values_are_regex: false
+    #     accepted_values:
+    #     - Admin
+    #     - ReadOnly
 ```
 
 ## Real example
@@ -62,7 +71,7 @@ routes:
       valid_domains:
       - foo.com
       sub_whitelist:
-      - email-not-from-domain@gmail.com
+      - email@not-from-domain-foo.com
 ```
 
 ## Requirements
