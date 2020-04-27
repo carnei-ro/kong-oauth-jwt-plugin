@@ -1,5 +1,3 @@
-local public_keys_file = '/etc/kong/oauth_jwt_public_keys.json' -- hard coded to be loaded at init_work phase
-
 local plugin_name = ({...})[1]:match("^kong%.plugins%.([^%.]+)")
 
 local read_file     = require("pl.file").read
@@ -27,6 +25,8 @@ local ngx_log       = ngx.log
 local ngx_DEBUG     = ngx.DEBUG
 local ngx_ERR       = ngx.ERR
 local os_getenv     = os.getenv
+local string_match  = string.match
+local toupper       = string.upper
 
 
 local cache, err = mlcache.new(plugin_name, "oauth_jwt_shared_dict", {
@@ -153,16 +153,6 @@ local function retrieve_jwt(conf, token)
         return nil, "Invalid algorithm: got [" .. jwt.header.alg .. "], expected [" .. conf.algorithm .. "]"
     end
 
-    if public_keys == {} or public_keys == nil then
-      ngx_log(ngx_DEBUG, ">>>>>>>>>>> PUBLIC KEYS WAS NOT LOADED. Trying again ... <<<<<<<<<<<")
-      local err
-      public_keys, err = load_public_keys(public_keys_file)
-      if err then
-        ngx_log(ngx_ERR,   ">>>>>>>>>>> PUBLIC KEYS NOT LOADED CORRECTLY. Check file: " .. public_keys_file .. "  <<<<<<<<<<<")
-        return nil, "Could not load public keys file"
-      end
-    end
-
     local kid = jwt.header.kid or 'default'
     ngx_log(ngx_DEBUG, "Using Key_ID: " .. kid)
     if not public_keys[kid] then
@@ -176,26 +166,6 @@ local function retrieve_jwt(conf, token)
     if conf["valid_iss"] and table.getn(conf["valid_iss"]) ~= 0 then
       if not has_value(conf.valid_iss, jwt.claims.iss) then
         return nil, "Invalid iss"
-      end
-    end
-
-    -- Validate domains
-    if conf["valid_domains"] and table.getn(conf["valid_domains"]) ~= 0 then
-      if not has_value(conf.valid_domains, jwt.claims.domain) then
-        -- Allow if domain is not valid, but sub is listed on whitelist
-        if conf["sub_whitelist"] and table.getn(conf["sub_whitelist"]) ~= 0 then
-          if not has_value(conf.sub_whitelist, jwt.claims.sub) then
-            return nil, "Invalid domain"
-          end
-        else
-          return nil, "Invalid domain"
-        end
-      end
-    end
-
-    if conf["sub_blacklist"] and table.getn(conf["sub_blacklist"]) ~= 0 then
-      if has_value(conf.sub_blacklist, jwt.claims.sub) then
-        return nil, "Sub is in the blacklist"
       end
     end
 
@@ -217,7 +187,7 @@ end
 local function do_authentication(conf)
     local token, err = retrieve_token(ngx.req, conf)
     if err then
-        return false, err
+        return false, err, nil
     end
 
     if not token then
@@ -255,7 +225,93 @@ local function do_authentication(conf)
       set_header(conf.token_header, token)
     end
 
-    return true
+    return true, nil, claims
+end
+
+local function authorize(conf, claims)
+    local allow = true
+    local err = nil
+
+    ngx_log(ngx_DEBUG, "Authorization for " .. claims['sub'] .. " not found in cache.")
+
+    -- Validate domains
+    if conf["valid_domains"] and table.getn(conf["valid_domains"]) ~= 0 then
+      ngx_log(ngx_DEBUG, "Validating domains ...")
+      if not has_value(conf.valid_domains, claims.domain) then
+        -- Allow if domain is not valid, but sub is listed on whitelist
+        if conf["sub_allowlist"] and table.getn(conf["sub_allowlist"]) ~= 0 then
+          ngx_log(ngx_DEBUG, "Validating allow list ...")
+          if not has_value(conf.sub_allowlist, claims.sub) then
+            return nil, { ["message"] = "Invalid domain" }
+          end
+        else
+          return nil, { ["message"] = "Invalid domain" }
+        end
+      end
+    end
+
+    if conf["sub_denylist"] and table.getn(conf["sub_denylist"]) ~= 0 then
+      ngx_log(ngx_DEBUG, "Validating deny list ...")
+      if has_value(conf.sub_denylist, claims.sub) then
+        return nil, { ["message"] = "Sub is in the blacklist" }
+      end
+    end
+
+    if conf["claims_to_validate"] then
+      ngx_log(ngx_DEBUG, "Validating claims ...")
+      allow = false
+      err={ ["message"] = "Claim does not satisfy rules" }
+      for claim, configs in pairs(conf["claims_to_validate"]) do
+        if claims[claim] then
+          for _,accepted_value in ipairs(configs.accepted_values) do
+            if type(claims[claim]) == 'table' then
+              for _,claim_value in ipairs(claims[claim]) do
+                if configs.values_are_regex then
+                  if string_match(claim_value, accepted_value) then
+                    allow = true
+                    err = nil
+                  end
+                else
+                  if toupper(claim_value) == toupper(accepted_value) then
+                    allow = true
+                    err = nil
+                  end
+                end
+              end
+            elseif type(claims[claim]) == 'string' then
+              if configs.values_are_regex then
+                if string_match(claims[claim], accepted_value) then
+                  allow = true
+                  err = nil
+                end
+              else
+                if toupper(claim_value) == toupper(accepted_value) then
+                  allow = true
+                  err = nil
+                end
+              end
+            elseif (type(claims[claim]) == 'number') or (type(claims[claim]) == 'boolean') then
+              if tostring(claims[claim]) == accepted_value then
+                allow = true
+                err = nil
+              end
+            end
+          end
+        end
+      end
+    end
+
+    return allow, err
+end
+
+local function do_authorization(conf, claims)
+    local authz, err
+    if conf.use_cache_authz then
+      authz, err = cache:get(claims['sub'], { ttl = conf.authz_ttl }, authorize, conf, claims)
+    else
+      authz, err = authorize(conf, claims)
+    end
+    return authz, err
 end
 
 function _M.execute(conf)   
@@ -275,15 +331,18 @@ function _M.execute(conf)
       end
     end
 
-    local ok, err = do_authentication(conf)
-    local e = err
-    if type(err) == "table" then
-        e = write(err)
-    end
-    ngx_log(ngx_DEBUG, ">>> authentication: [", ok, ", ", e, "]")
+    local ok, err, claims = do_authentication(conf)
+    ngx_log(ngx_DEBUG, ">>> authentication: [", write(ok), ", ", write(err), "]")
     if not ok then
-      return_error(500)
+      kong.response.exit(500)
     end
+
+    local authz, err = do_authorization(conf, claims)
+    ngx_log(ngx_DEBUG, ">>> authorization: [", write(authz), ", ", write(err), "]")
+    if err then
+      kong.response.exit(403, err)
+    end
+    return authz
 end
 
 function _M.retrieve_token(M,request,conf)

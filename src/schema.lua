@@ -66,12 +66,12 @@ return {
                 elements = { type = "string" },
                 required = false
             } },
-            { sub_whitelist = {
+            { sub_allowlist = {
                 type = "array",
                 elements = { type = "string" },
                 required = false
             } },
-            { sub_blacklist = {
+            { sub_denylist = {
                 type = "array",
                 elements = { type = "string" },
                 required = false
@@ -90,7 +90,31 @@ return {
                 type = "string",
                 default = "oauth_jwt",
                 required = true
-            } }
+            } },
+            { claims_to_validate = {
+                type = "map",
+                keys = { type = "string" },
+                required = false,
+                values = {
+                    type = "record",
+                    required = true,
+                    fields = {
+                        { values_are_regex = { type = "boolean", default = false }, },
+                        { accepted_values = { type = "array", elements = { type = "string" } }, },
+                    }
+                },
+                default = { roles = { values_are_regex = false, accepted_values = { "Admin2", "admin" } } }
+            } },
+            { use_cache_authz = {
+                type = "boolean",
+                default = true,
+                required = true
+            } },
+            { authz_ttl = {
+                type = "number",
+                default = 1800,
+                required = true
+            } },
         },
       },
     },
