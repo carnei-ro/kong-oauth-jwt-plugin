@@ -103,7 +103,7 @@ return {
                         { accepted_values = { type = "array", elements = { type = "string" } }, },
                     }
                 },
-                default = { roles = { values_are_regex = false, accepted_values = { "Admin2", "admin" } } }
+                -- default = { roles = { values_are_regex = false, accepted_values = { "Admin2", "admin" } } }
             } },
             { use_cache_authz = {
                 type = "boolean",
