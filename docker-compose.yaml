@@ -54,16 +54,16 @@ services:
       - KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS='{"12345678-1234-1234-1234-123456789ABC":"LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUEzOUk3QndkZTdzV3hsRmdGdElhVQpiTDVBUjY2WWJ0MmJmazFqREFDYjd4b25mam54Sm5nZXdBSnZtTWxmYzBtV0owVll1TVJnalExUExsUUNqL0o3ClNZR1UydnNtS0I3VjIyVjU4Yjd6Z1BCVGtNNDFWYytOZks2M3dGVUdYbUQrdzdBSTFiOXRXZzhORXk3UkRyaW0KZldmUnhLNGlUSGZrSnpMYXJ6c3MzRHVzUzRNbTRJVXIzc2ZXNDFVZVhGRE1ubnc1RWRLbHdvd1lFT3RaaXJJbQpZU1QrZDE5QWFlaDVOMU94YldoVWxqci9NYnFXNXlWV2RPaEZqZENKeDJQZWgxdU9JUUlScjV0U0Rva2kzZ0FLClRWRnpyV3ZoZE51SGw1NTdKV2FTVnJxano5TGt0VEUyN3lKUlhtbGZmK1BSb0VhcmdGY0s1RnhzdDFlSnRkYTIKT1FJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="}'
     volumes:
       - plugin-development:/plugin-development
+    user: "0:0"
     command:
       - /bin/bash
       - -c
       - |
         sleep 12
-        mkdir -p /usr/local/lib/luarocks/rocks/${NAME}/${VERSION}/
-        ln -s /plugin-development/${NAME}-${VERSION}.rockspec /usr/local/lib/luarocks/rocks/${NAME}/${VERSION}/${NAME}-${VERSION}.rockspec
+        mkdir -p /usr/local/lib/luarocks/rocks-5.1/${NAME}/${VERSION}/
+        ln -s /plugin-development/${NAME}-${VERSION}.rockspec /usr/local/lib/luarocks/rocks-5.1/${NAME}/${VERSION}/${NAME}-${VERSION}.rockspec
         ln -s /plugin-development/src /usr/local/share/lua/5.1/kong/plugins/${NAME}
         #sed -i "/proxy_set_header.*X-Forwarded-For/d; /proxy_set_header.*X-Real-IP/d;" /usr/local/share/lua/5.1/kong/templates/nginx_kong.lua
-        ln -s /plugin-development/oauth_jwt_public_keys.json /etc/kong/oauth_jwt_public_keys.json
         kong migrations bootstrap
         kong migrations list 
         kong migrations up
