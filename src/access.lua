@@ -27,6 +27,7 @@ local ngx_ERR       = ngx.ERR
 local os_getenv     = os.getenv
 local string_match  = string.match
 local toupper       = string.upper
+local concat        = table.concat
 
 
 local cache, err = mlcache.new(plugin_name, "oauth_jwt_shared_dict", {
@@ -228,11 +229,11 @@ local function do_authentication(conf)
     return true, nil, claims
 end
 
-local function authorize(conf, claims)
+local function authorize(conf, claims, key)
     local allow = true
     local err = nil
 
-    ngx_log(ngx_DEBUG, "Authorization for " .. claims['sub'] .. " not found in cache.")
+    ngx_log(ngx_DEBUG, "Authorization for " .. key .. " not found in cache.")
 
     -- Validate domains
     if conf["valid_domains"] and table.getn(conf["valid_domains"]) ~= 0 then
@@ -305,11 +306,13 @@ local function authorize(conf, claims)
 end
 
 local function do_authorization(conf, claims)
+    local route = kong.router.get_route()
+    local key = concat({ route['id'], ':', claims['iss'], ':', claims['sub'] })
     local authz, err
     if conf.use_cache_authz then
-      authz, err = cache:get(claims['sub'], { ttl = conf.authz_ttl }, authorize, conf, claims)
+      authz, err = cache:get(key, { ttl = conf.authz_ttl }, authorize, conf, claims, key)
     else
-      authz, err = authorize(conf, claims)
+      authz, err = authorize(conf, claims, key)
     end
     return authz, err
 end
