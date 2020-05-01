@@ -20,6 +20,15 @@ return {
                 default = { "oauth_jwt" },
                 required = true
             } },
+            { public_keys = {
+                type = "map",
+                keys = { type = "string" },
+                required = false,
+                values = {
+                    type = "string",
+                    required = true,
+                }
+            } },
             { use_cache = {
                 type = "boolean",
                 default = true,

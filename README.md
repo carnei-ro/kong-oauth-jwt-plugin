@@ -29,6 +29,9 @@ plugins:
     run_on_preflight: false # Enable to required a valid token on OPTIONS requests
     validate_token_exp_date: true # Disable to ignore validation of JWT claim "exp"
     issuer_uri: /_oauth # URI for the JWT issuer (kong-...-oauth-jwt-signer)
+    public_keys: <empty> # Alternative keychain to env var KONG_OAUTH_JWT_PLUGIN_PUBLIC_KEYS
+    # public_keys:
+    #   12345678-1234-1234-1234-123456789ABC: LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUEzOUk3QndkZTdzV3hsRmdGdElhVQpiTDVBUjY2WWJ0MmJmazFqREFDYjd4b25mam54Sm5nZXdBSnZtTWxmYzBtV0owVll1TVJnalExUExsUUNqL0o3ClNZR1UydnNtS0I3VjIyVjU4Yjd6Z1BCVGtNNDFWYytOZks2M3dGVUdYbUQrdzdBSTFiOXRXZzhORXk3UkRyaW0KZldmUnhLNGlUSGZrSnpMYXJ6c3MzRHVzUzRNbTRJVXIzc2ZXNDFVZVhGRE1ubnc1RWRLbHdvd1lFT3RaaXJJbQpZU1QrZDE5QWFlaDVOMU94YldoVWxqci9NYnFXNXlWV2RPaEZqZENKeDJQZWgxdU9JUUlScjV0U0Rva2kzZ0FLClRWRnpyV3ZoZE51SGw1NTdKV2FTVnJxano5TGt0VEUyN3lKUlhtbGZmK1BSb0VhcmdGY0s1RnhzdDFlSnRkYTIKT1FJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==
     valid_iss:
     - Kong
     claims_to_headers: [] # Format claim:header. Generates a header with the value of the claim

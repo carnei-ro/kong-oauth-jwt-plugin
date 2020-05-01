@@ -126,6 +126,18 @@ end
 --     return string_format("%0.3f", (system_clock - req_start_time))
 -- end
 
+local function retrive_pk(keychain1, keychain2, key)
+  local k1 = keychain1 and keychain1 or {}
+  local k2 = keychain2 and keychain2 or {}
+  if k1[key] then
+    return k1[key]
+  end
+  if k2[key] then
+    return ngx_b64.decode_base64url(k2[key])
+  end
+  return nil
+end
+
 local function return_redirect(issuer_uri, uri, err)
   ngx_log(ngx_ERR, tostring(err))
   ngx_header["WWW-Authenticate"]='error="' .. tostring(err) .. '"'
@@ -156,11 +168,12 @@ local function retrieve_jwt(conf, token)
 
     local kid = jwt.header.kid or 'default'
     ngx_log(ngx_DEBUG, "Using Key_ID: " .. kid)
-    if not public_keys[kid] then
+    local pk = retrive_pk(public_keys, conf.public_keys, kid)
+    if not pk then
       return nil, "Could not load public key"
     end
 
-    if not jwt:verify_signature(public_keys[kid]) then
+    if not jwt:verify_signature(pk) then
       return nil, "Invalid signature"
     end
 
