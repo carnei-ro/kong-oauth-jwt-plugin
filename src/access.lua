@@ -301,7 +301,7 @@ local function authorize(conf, claims, key)
                   err = nil
                 end
               else
-                if toupper(claim_value) == toupper(accepted_value) then
+                if toupper(claims[claim]) == toupper(accepted_value) then
                   allow = true
                   err = nil
                 end

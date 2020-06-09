@@ -1,0 +1,26 @@
+---
+_format_version: "1.1"
+
+services:
+- name: httpbin
+  url: https://httpbin.org/anything
+
+routes:
+- hosts: []
+  methods: []
+  name: httpbin
+  paths:
+  - /
+  preserve_host: false
+  regex_priority: 1
+  service: httpbin
+  strip_path: false
+  plugins:
+  - name: kong-oauth-jwt-plugin
+    config:
+      validate_token_exp_date: false
+      claims_to_validate:
+        sub:
+          values_are_regex: false
+          accepted_values:
+          - "leandro@carnei.ro"
