@@ -223,6 +223,7 @@ local function do_authentication(conf)
       for _,claim in ipairs(conf.t_claims) do
         if claims[claim] then
           local header = (type(claims[claim]) == "table") and cjson.encode(claims[claim]) or claims[claim]
+          if (header == '{}') then header = nil end
           set_header(conf['t_claims_to_headers'][claim], header)
         else
           set_header(conf['t_claims_to_headers'][claim], nil)
