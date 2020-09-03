@@ -29,6 +29,11 @@ return {
                     required = true,
                 }
             } },
+            { ignore_environment_public_keys = {
+                type = "boolean",
+                default = false,
+                required = true
+            } },
             { use_cache = {
                 type = "boolean",
                 default = true,

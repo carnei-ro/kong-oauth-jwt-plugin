@@ -126,14 +126,14 @@ end
 --     return string_format("%0.3f", (system_clock - req_start_time))
 -- end
 
-local function retrive_pk(keychain1, keychain2, key)
-  local k1 = keychain1 and keychain1 or {}
-  local k2 = keychain2 and keychain2 or {}
-  if k1[key] then
-    return k1[key]
+local function retrive_pk(conf_pub_keys, env_pub_keys, key_id)
+  local k1 = conf_pub_keys and conf_pub_keys or {}
+  local k2 = env_pub_keys and env_pub_keys or {}
+  if k1[key_id] then
+    return ngx_b64.decode_base64url(k1[key_id])
   end
-  if k2[key] then
-    return ngx_b64.decode_base64url(k2[key])
+  if k2[key_id] then
+    return k2[key_id]
   end
   return nil
 end
@@ -168,7 +168,12 @@ local function retrieve_jwt(conf, token)
 
     local kid = jwt.header.kid or 'default'
     ngx_log(ngx_DEBUG, "Using Key_ID: " .. kid)
-    local pk = retrive_pk(public_keys, conf.public_keys, kid)
+    local pk = nil
+    if conf.ignore_environment_public_keys then
+      pk = retrive_pk(conf.public_keys, nil, kid)
+    else
+      pk = retrive_pk(conf.public_keys, public_keys, kid)
+    end
     if not pk then
       return nil, "Could not load public key"
     end
@@ -186,7 +191,7 @@ local function retrieve_jwt(conf, token)
       ngx_log(ngx_DEBUG, "Token valid. TTL: " .. tostring(conf.ttl))
       return jwt.claims
     else
-      local token_ttl = jwt.claims.exp - ( ngx_time() - 1 )
+      local token_ttl = jwt.claims.exp and (jwt.claims.exp - ( ngx_time() - 1 )) or 0.1
       ngx_log(ngx_DEBUG, "Token valid. TTL: " .. tostring(token_ttl))
       return jwt.claims, nil, token_ttl
     end
@@ -323,7 +328,7 @@ end
 
 local function do_authorization(conf, claims)
     local route = kong.router.get_route()
-    local key = concat({ route['id'], ':', claims['iss'], ':', claims['sub'] })
+    local key = concat({ route['id'], ':', (claims['iss'] or 'undefined'), ':', claims['sub'] })
     local authz, err
     if conf.use_cache_authz then
       authz, err = cache:get(key, { ttl = conf.authz_ttl }, authorize, conf, claims, key)
@@ -354,6 +359,9 @@ function _M.execute(conf)
     ngx_log(ngx_DEBUG, ">>> authentication: [", write(ok), ", ", write(err), "]")
     if not ok then
       kong.response.exit(500)
+    end
+    if err then
+      kong.response.exit(403, err)
     end
 
     local authz, err = do_authorization(conf, claims)
