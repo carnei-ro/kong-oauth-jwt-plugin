@@ -59,6 +59,11 @@ return {
                 default = false,
                 required = true
             } },
+            { run_on_connection_upgrade = {
+                type = "boolean",
+                default = true,
+                required = true
+            } },
             { validate_token_exp_date = {
                 type = "boolean",
                 default = true,

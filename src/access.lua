@@ -345,6 +345,14 @@ function _M.execute(conf)
         return
     end
 
+    if not conf.run_on_connection_upgrade then
+      local connection = kong.request.get_header('Connection')
+      connection = connection and connection:lower() or nil
+      if connection and (connection == 'upgrade') then
+        return
+      end
+    end
+
     if conf.claims_to_headers then
       conf['t_claims_to_headers'] = {}
       conf['t_claims'] = {}

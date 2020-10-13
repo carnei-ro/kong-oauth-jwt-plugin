@@ -26,7 +26,8 @@ plugins:
     override_ttl: false # Default TTL is JWT claim "exp" - now
     ttl: 120
     algorithm: RS512 # Only supported value for now
-    run_on_preflight: false # Enable to required a valid token on OPTIONS requests
+    run_on_preflight: false # Enable to require a valid token on OPTIONS requests
+    run_on_connection_upgrade: true # Disable to require a valid token on requests with header Connection and value Upgrade
     validate_token_exp_date: true # Disable to ignore validation of JWT claim "exp"
     issuer_uri: /_oauth # URI for the JWT issuer (kong-...-oauth-jwt-signer)
     ignore_environment_public_keys: false # only consider keys from config.public_keys
