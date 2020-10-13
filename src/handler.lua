@@ -15,6 +15,6 @@ function plugin:access(conf)
 end
 
 plugin.PRIORITY = 1000
-plugin.VERSION = "1.1-0"
+plugin.VERSION = "1.2-0"
 
 return plugin
